@@ -9,11 +9,19 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\FilesRepository;
 use App\Repository\UsersRepository;
 use App\Entity\Files;
+use App\Entity\Status;
+use App\Entity\Type;
 use App\Entity\Users;
 use DateTimeInterface;
 
 class MainController extends AbstractController
 {
+    #[Route('/test', name: 'index', methods: 'post')]
+    public function index(Request $request): Response
+    {
+        return new Response('');
+    }
+
     #[Route('/file/create', name: 'create', methods: 'post')]
     public function create(Request $request): Response
     {
