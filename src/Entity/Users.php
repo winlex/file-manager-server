@@ -30,7 +30,7 @@ class Users
     /**
      * @ORM\Column(type="smallint")
      */
-    private $role;
+    private $id_role;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -68,12 +68,12 @@ class Users
 
     public function getRole(): ?int
     {
-        return $this->role;
+        return $this->id_role;
     }
 
     public function setRole(int $role): self
     {
-        $this->role = $role;
+        $this->id_role = $role;
 
         return $this;
     }
@@ -86,6 +86,18 @@ class Users
     public function setSession(string $session): self
     {
         $this->session = $session;
+
+        return $this;
+    }
+
+    public function getIdRole(): ?int
+    {
+        return $this->id_role;
+    }
+
+    public function setIdRole(int $id_role): self
+    {
+        $this->id_role = $id_role;
 
         return $this;
     }

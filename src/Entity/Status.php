@@ -38,4 +38,9 @@ class Status
 
         return $this;
     }
+
+    public function getIdStatus(): ?int
+    {
+        return $this->id_status;
+    }
 }

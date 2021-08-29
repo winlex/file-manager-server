@@ -4,11 +4,12 @@ namespace App\Entity;
 
 use App\Repository\FilesRepository;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 /**
  * @ORM\Entity(repositoryClass=FilesRepository::class)
  */
-class Files
+class Files implements JsonSerializable
 {
     /**
      * @ORM\Id
@@ -51,6 +52,21 @@ class Files
      * @ORM\Column(type="string", length=255)
      */
     private $path;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $old_path;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $hash;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $hash_delete;
 
     public function getId(): ?int
     {
@@ -139,5 +155,64 @@ class Files
         $this->path = $path;
 
         return $this;
+    }
+
+    public function getOldPath(): ?string
+    {
+        return $this->old_path;
+    }
+
+    public function setOldPath(string $old_path): self
+    {
+        $this->old_path = $old_path;
+
+        return $this;
+    }
+
+    public function getHash(): ?string
+    {
+        return $this->hash;
+    }
+
+    public function setHash(string $hash): self
+    {
+        $this->hash = $hash;
+
+        return $this;
+    }
+
+    public function getHashDelete(): ?string
+    {
+        return $this->hash_delete;
+    }
+
+    public function setHashDelete(string $hash_delete): self
+    {
+        $this->hash_delete = $hash_delete;
+
+        return $this;
+    }
+
+    public function setHashDeleteNULL(): self
+    {
+        $this->hash_delete = NULL;
+
+        return $this;
+    }
+
+    public function jsonSerialize() {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'content' => $this->content,
+            'date_create' => $this->date_create,
+            'date_modify' => $this->date_modify,
+            'type' => $this->type,
+            'status' => $this->status,
+            'path' => $this->path,
+            'old_path' => $this->old_path,
+            'hash' => $this->hash,
+            'hash_delete' => $this->hash_delete,
+        ];
     }
 }

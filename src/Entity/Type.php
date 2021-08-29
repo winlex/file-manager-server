@@ -38,4 +38,9 @@ class Type
 
         return $this;
     }
+
+    public function getIdType(): ?int
+    {
+        return $this->id_type;
+    }
 }
