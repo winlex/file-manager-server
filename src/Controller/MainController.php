@@ -9,6 +9,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\FilesRepository;
 use App\Entity\Files;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Psr\Log\LoggerInterface;
 
 class MainController extends AbstractController
 {
@@ -21,17 +22,19 @@ class MainController extends AbstractController
     #[Route('/file/create', name: 'create', methods: 'post')]
     public function create(Request $request): Response
     {
+        $body = json_decode($request->getContent());
+
         $entityManager = $this->getDoctrine()->getManager();
         date_default_timezone_set('Europe/Moscow');
         $file = new Files();
 
-        $file->setName($request->request->get('type') == 1 ? $request->request->get('name') : $request->request->get('name') . '/');
-        $file->setContent($request->request->get('content') || null);
-        $file->setType(intval($request->request->get('type'))); //0 - file
+        $file->setName($body->type == 1 ? $body->name : $body->name . '/');
+        $file->setContent($body->content);
+        $file->setType(intval($body->type)); //1 - file
         $file->setStatus(1);
         $file->setDateCreate(new \DateTime());
         $file->setDateModify(new \DateTime());
-        $file->setPath($request->request->get('path'));
+        $file->setPath($body->path);
 
         $hash = hash('sha256', $file->getPath().$file->getName());
         $exists = count($entityManager->getRepository(Files::class)->findBy([
@@ -56,7 +59,7 @@ class MainController extends AbstractController
             return new JsonResponse($file);
         else {
             $currentPath = $file->getPath() . $file->getName();
-            $files = $filesrepository->findByFolder($currentPath);
+            $files = $filesrepository->findAllFolder($currentPath);
 
             return new JsonResponse($files);
         }
@@ -65,14 +68,14 @@ class MainController extends AbstractController
     #[Route('/file/{id}/update', name: 'update', methods: 'post')]
     public function update(Files $file, Request $request): Response
     {
-        $req = $request->request;
+        $body = json_decode($request->getContent());
 
         if($file->getType() == 1) {
-            $file->setName($req->get('name'));
-            $file->setContent($req->get('content'));
+            $file->setName($body->name);
+            $file->setContent($body->content);
             $file->setDateModify(new \DateTime());
         } else if($file->getType() == 2) {
-            $file->setName($req->get('name'));
+            $file->setName($body->name);
             $file->setDateModify(new \DateTime());
         }
 
@@ -87,12 +90,11 @@ class MainController extends AbstractController
          */
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
-        $r = null;
 
         $file->setStatus(2);
         $file->setOldPath($file->getPath());
         $file->setPath('trash/');
-        $file->setHashDelete(hash('sha256', (new \DateTime())->format('Y-m-d H:i:s'))); //хэш удаления нужен, чтобы предотвратить коллизии с удалением директории, в которой уже были удалены файлы или директории
+        $file->setHashDelete(hash('sha256', $file->getDateCreate()->format('Y-m-d H:i:s'))); //хэш удаления нужен, чтобы предотвратить коллизии с удалением директории, в которой уже были удалены файлы или директории
         if($file->getType() == 2) 
             $filesrepository->deleteFolder($file->getOldPath().$file->getName(), $file->getHashDelete());
         $entityManager->flush();
@@ -105,16 +107,16 @@ class MainController extends AbstractController
     {
         /**
          * TODO: Сделать эксепшен, что файл не удален еще
+         * TODO: Сделать проверку при восстановление в корень, что такой файл уже существует в системе
          */
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
         $r[] = new Files();
-        $test = false;
         
         $file->setStatus(1);
         $exists = count($filesrepository->findBy([
-            'hash' => hash('sha256', $file->getOldPath()),
-            'status' => '1'
+            'hash' => hash('sha256', $file->getDateCreate()->format('Y-m-d H:i:s')),
+            'status' => '2'
         ])) == 1;
         if($file->getType() == 2) {
             $r = $filesrepository->restoreFolder($file->getOldPath().$file->getName(), $file->getHashDelete());
@@ -146,6 +148,8 @@ class MainController extends AbstractController
         $r = null;
 
         $file->setStatus(3);
+        $file->setPath('Null');
+        $file->setHashDeleteNULL();
         if($file->getType() == 2) 
             $r = $filesrepository->deleteFolder($file->getOldPath().$file->getName(), null, true);
         $entityManager->flush();
