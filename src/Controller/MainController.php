@@ -23,11 +23,12 @@ class MainController extends AbstractController
     public function create(Request $request): Response
     {
         $body = json_decode($request->getContent());
-
         $entityManager = $this->getDoctrine()->getManager();
         date_default_timezone_set('Europe/Moscow');
-        $file = new Files();
 
+        if(strlen($body->name) < 1) return new JsonResponse([ 'error' => 'Имя не задано']);
+        
+        $file = new Files();
         $file->setName($body->type == 1 ? $body->name : $body->name . '/');
         $file->setContent($body->content);
         $file->setType(intval($body->type)); //1 - file
@@ -69,6 +70,9 @@ class MainController extends AbstractController
     public function update(Files $file, Request $request): Response
     {
         $body = json_decode($request->getContent());
+        $entityManager = $this->getDoctrine()->getManager();
+
+        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
 
         if($file->getType() == 1) {
             $file->setName($body->name);
@@ -78,6 +82,7 @@ class MainController extends AbstractController
             $file->setName($body->name);
             $file->setDateModify(new \DateTime());
         }
+        $entityManager->flush();
 
         return new JsonResponse($file);
     }
@@ -85,11 +90,11 @@ class MainController extends AbstractController
     #[Route('/file/{id}/delete', name: 'delete', methods: 'post')]
     public function delete(Files $file): Response
     {
-        /**
-         * TODO: Сделать эксепшен, что файл удален уже
-         */
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
+
+        if($file->getStatus() == 2 || $file->getStatus() == 3) return new JsonResponse([ 'error' => 'Файл удален уже']);
+        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
 
         $file->setStatus(2);
         $file->setOldPath($file->getPath());
@@ -106,12 +111,14 @@ class MainController extends AbstractController
     public function restore(Files $file): Response
     {
         /**
-         * TODO: Сделать эксепшен, что файл не удален еще
          * TODO: Сделать проверку при восстановление в корень, что такой файл уже существует в системе
          */
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
         $r[] = new Files();
+
+        if($file->getStatus() == 1) return new JsonResponse([ 'error' => 'Файл не удален еще']);
+        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
         
         $file->setStatus(1);
         $exists = count($filesrepository->findBy([
@@ -140,12 +147,12 @@ class MainController extends AbstractController
     #[Route('/file/{id}/permanently', name: 'permanently', methods: 'post')]
     public function permanently(Files $file): Response
     {
-        /**
-         * TODO: Сделать эксепшен, что файл не удален еще
-         */
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
         $r = null;
+
+        if($file->getStatus() == 1) return new JsonResponse([ 'error' => 'Файл не удален еще']);
+        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
 
         $file->setStatus(3);
         $file->setPath('Null');
