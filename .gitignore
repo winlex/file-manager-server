@@ -19,3 +19,6 @@
 /phpunit.xml
 .phpunit.result.cache
 ###< phpunit/phpunit ###
+
+### PHP-cs-fixer
+/tools/php-cs-fixer

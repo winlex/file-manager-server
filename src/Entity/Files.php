@@ -195,12 +195,13 @@ class Files implements JsonSerializable
 
     public function setHashDeleteNULL(): self
     {
-        $this->hash_delete = NULL;
+        $this->hash_delete = null;
 
         return $this;
     }
 
-    public function jsonSerialize() {
+    public function jsonSerialize()
+    {
         return [
             'id' => $this->id,
             'name' => $this->name,

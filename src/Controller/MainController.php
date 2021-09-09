@@ -26,8 +26,10 @@ class MainController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
         date_default_timezone_set('Europe/Moscow');
 
-        if(strlen($body->name) < 1) return new JsonResponse([ 'error' => 'Имя не задано']);
-        
+        if (strlen($body->name) < 1) {
+            return new JsonResponse([ 'error' => 'Имя не задано']);
+        }
+
         $file = new Files();
         $file->setName($body->type == 1 ? $body->name : $body->name . '/');
         $file->setContent($body->content);
@@ -56,9 +58,9 @@ class MainController extends AbstractController
     public function open(Files $file): Response
     {
         $filesrepository = new FilesRepository($this->getDoctrine());
-        if($file->getType() == 1)
+        if ($file->getType() == 1) {
             return new JsonResponse($file);
-        else {
+        } else {
             $currentPath = $file->getPath() . $file->getName();
             $files = $filesrepository->findAllFolder($currentPath);
 
@@ -72,13 +74,15 @@ class MainController extends AbstractController
         $body = json_decode($request->getContent());
         $entityManager = $this->getDoctrine()->getManager();
 
-        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
+        if ($file->getId() == 1 || $file->getId() == 3) {
+            return new Response(403);
+        }
 
-        if($file->getType() == 1) {
+        if ($file->getType() == 1) {
             $file->setName($body->name);
             $file->setContent($body->content);
             $file->setDateModify(new \DateTime());
-        } else if($file->getType() == 2) {
+        } elseif ($file->getType() == 2) {
             $file->setName($body->name);
             $file->setDateModify(new \DateTime());
         }
@@ -93,15 +97,20 @@ class MainController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
         $filesrepository = new FilesRepository($this->getDoctrine());
 
-        if($file->getStatus() == 2 || $file->getStatus() == 3) return new JsonResponse([ 'error' => 'Файл удален уже']);
-        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
+        if ($file->getStatus() == 2 || $file->getStatus() == 3) {
+            return new JsonResponse([ 'error' => 'Файл удален уже']);
+        }
+        if ($file->getId() == 1 || $file->getId() == 3) {
+            return new Response(403);
+        }
 
         $file->setStatus(2);
         $file->setOldPath($file->getPath());
         $file->setPath('trash/');
         $file->setHashDelete(hash('sha256', $file->getDateCreate()->format('Y-m-d H:i:s'))); //хэш удаления нужен, чтобы предотвратить коллизии с удалением директории, в которой уже были удалены файлы или директории
-        if($file->getType() == 2) 
+        if ($file->getType() == 2) {
             $filesrepository->deleteFolder($file->getOldPath().$file->getName(), $file->getHashDelete());
+        }
         $entityManager->flush();
 
         return new JsonResponse($file);
@@ -117,18 +126,22 @@ class MainController extends AbstractController
         $filesrepository = new FilesRepository($this->getDoctrine());
         $r[] = new Files();
 
-        if($file->getStatus() == 1) return new JsonResponse([ 'error' => 'Файл не удален еще']);
-        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
-        
+        if ($file->getStatus() == 1) {
+            return new JsonResponse([ 'error' => 'Файл не удален еще']);
+        }
+        if ($file->getId() == 1 || $file->getId() == 3) {
+            return new Response(403);
+        }
+
         $file->setStatus(1);
         $exists = count($filesrepository->findBy([
             'hash' => hash('sha256', $file->getDateCreate()->format('Y-m-d H:i:s')),
             'status' => '2'
         ])) == 1;
-        if($file->getType() == 2) {
+        if ($file->getType() == 2) {
             $r = $filesrepository->restoreFolder($file->getOldPath().$file->getName(), $file->getHashDelete());
-            if (count($r) > 0 && !$exists) 
-                foreach($r as $value) {
+            if (count($r) > 0 && !$exists) {
+                foreach ($r as $value) {
                     $temp = $value->getPath(); //Путь каждого файла/директории в выбранной диретории для восставноления
                     $tmp = $file->getPath(); //Абсолютный путь выбранной директории для восстановления
 
@@ -137,6 +150,7 @@ class MainController extends AbstractController
                     $value->setHashDeleteNULL();
                     $value->setPath($temp);
                 }
+            }
         }
         $file->setPath($exists ? $file->getOldPath() : '/');
         $entityManager->flush();
@@ -151,21 +165,25 @@ class MainController extends AbstractController
         $filesrepository = new FilesRepository($this->getDoctrine());
         $r = null;
 
-        if($file->getStatus() == 1) return new JsonResponse([ 'error' => 'Файл не удален еще']);
-        if($file->getId() == 1 || $file->getId() == 3) return new Response(403);
+        if ($file->getStatus() == 1) {
+            return new JsonResponse([ 'error' => 'Файл не удален еще']);
+        }
+        if ($file->getId() == 1 || $file->getId() == 3) {
+            return new Response(403);
+        }
 
         $file->setStatus(3);
         $file->setPath('Null');
         $file->setHashDeleteNULL();
-        if($file->getType() == 2) 
+        if ($file->getType() == 2) {
             $r = $filesrepository->deleteFolder($file->getOldPath().$file->getName(), null, true);
+        }
         $entityManager->flush();
 
-        if ( !empty($r) ){
+        if (!empty($r)) {
             return new JsonResponse($file);
         } else {
             return new Response($r);
         }
     }
 }
-
